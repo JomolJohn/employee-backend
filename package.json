@@ -2,8 +2,12 @@
   "name": "employee-backend",
   "version": "1.0.0",
   "description": "backend app for employee",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
+    "dev": "nodemon --exec ts-node index.ts",
+    "start": "tsc && node dist/index.js",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jomol Johnson",
@@ -19,6 +23,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
+    "nodemon": "^3.1.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
