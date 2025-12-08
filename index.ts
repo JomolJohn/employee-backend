@@ -1,9 +1,51 @@
-import app from './src/app';
+import express, { Express } from "express";
+import { Server, createServer } from 'http';
+import mongoose from "mongoose";
+import { bootstrap } from "./src/loader/bootstrap";
+import { logger } from './src/config/logger';
+import { validateEnv } from "./src/config/env.config"
 
-const PORT = process.env.PORT || 2000;
+const exitHandler = (server: Server | null) => {
+  if (server) {
+    server.close(async () => {
+      logger.info('Server closed');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+};
 
-app.listen(PORT, () => {
-  /* eslint-disable no-console */
-  console.log(`Listening: http://localhost:${PORT}`);
-  /* eslint-enable no-console */
-});
+const unExpectedErrorHandler = (server: Server) => {
+  return function (error: Error) {
+    logger.error(error);
+    exitHandler(server);
+  };
+};
+
+const startServer = async () => {
+  const app: Express = express();
+  await bootstrap(app);
+
+  const httpServer = createServer(app);
+  const port = validateEnv()?.port
+
+  const server: Server = httpServer.listen(port, () => {
+    logger.info(`Listening: http://localhost:${port}`);
+  });
+
+  process.on('uncaughtException', unExpectedErrorHandler(server));
+  process.on('unhandledRejection', unExpectedErrorHandler(server));
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM recieved');
+    if (server) {
+      server.close();
+    }
+  });
+
+  mongoose.connection.on("error", (err) => {
+    console.log(`${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`);
+  });
+};
+
+startServer();
